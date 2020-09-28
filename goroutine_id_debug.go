@@ -24,10 +24,7 @@ import (
 type goroutineId uint64
 
 func (self goroutineId) isSameGoroutine() bool {
-	if self == curID() {
-		return true
-	}
-	return false
+	return self == curID()
 }
 
 var goroutineSpace = []byte("goroutine ")
