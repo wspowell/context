@@ -1,6 +1,6 @@
 // +build release
 
-package local
+package context
 
 // ID is the ID number of a goroutine.
 type goroutineId uint64

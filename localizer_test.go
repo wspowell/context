@@ -1,22 +1,20 @@
-package local_test
+package context_test
 
 import (
-	"context"
 	"fmt"
-	"sync"
 	"testing"
 
-	"github.com/wspowell/local"
+	"github.com/wspowell/context"
 )
 
-type immutableContextKey struct{}
-type localContextKey struct{}
-type duplicateContextKey struct{}
+type immutableContextKey int
+type localContextKey int
+type duplicateContextKey int
 
 var (
-	immutableKey = immutableContextKey{}
-	localKey     = localContextKey{}
-	duplicateKey = duplicateContextKey{}
+	immutableKey immutableContextKey
+	localKey     localContextKey
+	duplicateKey duplicateContextKey
 
 	immutableValue = "immutableValue"
 	localValue     = "localValue"
@@ -37,7 +35,7 @@ func checkContext(t *testing.T, ctx context.Context) {
 	}
 }
 
-func checkLocal(t *testing.T, ctx local.Context) {
+func checkLocal(t *testing.T, ctx context.Context) {
 	if ctx.Value(localKey).(string) != localValue {
 		panic(fmt.Sprintf("expected 'localKey' to be %v but was %v", localValue, ctx.Value(localKey)))
 	}
@@ -51,69 +49,88 @@ func checkLocal(t *testing.T, ctx local.Context) {
 	}
 }
 
-func Test_NewLocalized(t *testing.T) {
+func Test_Localize(t *testing.T) {
 	t.Parallel()
 
-	localCtx := local.NewLocalized()
+	ctx := context.Background()
 
-	local.WithValue(localCtx, immutableKey, immutableValue)
-	local.WithValue(localCtx, duplicateKey, immutableValue)
-
-	localCtx.Localize(localKey, localValue)
-	localCtx.Localize(duplicateKey, duplicateValue)
-
-	checkContext(t, localCtx.GetContext())
-	checkLocal(t, localCtx)
-}
-
-func Test_FromContext(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.WithValue(context.Background(), immutableKey, immutableValue)
+	ctx = context.WithValue(ctx, immutableKey, immutableValue)
 	ctx = context.WithValue(ctx, duplicateKey, immutableValue)
 
-	localCtx := local.FromContext(ctx)
-	localCtx.Localize(localKey, localValue)
-	localCtx.Localize(duplicateKey, duplicateValue)
+	localCtx := context.Localize(ctx)
 
-	checkContext(t, localCtx.GetContext())
+	localCtx = context.WithLocalValue(localCtx, localKey, localValue)
+	localCtx = context.WithLocalValue(localCtx, duplicateKey, duplicateValue)
+
+	checkContext(t, ctx)
 	checkLocal(t, localCtx)
 }
 
-func Test_Context_ThreadSafety_Correct_Usage(t *testing.T) {
+func Test_Localize_nested(t *testing.T) {
 	t.Parallel()
 
-	localCtx := local.NewLocalized()
-	localCtx.Localize(localKey, localValue)
+	ctx := context.Localize(context.Background())
 
-	var paniced bool
+	ctx = context.WithValue(ctx, immutableKey, immutableValue)
+	ctx = context.WithLocalValue(ctx, duplicateKey, immutableValue)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func(boundaryCtx context.Context, wg *sync.WaitGroup) {
-		defer func() {
-			if err := recover(); err != nil {
-				paniced = true
-			}
-		}()
-		defer wg.Done()
+	localCtx := context.Localize(ctx)
 
-		ctx := local.FromContext(boundaryCtx)
-		if ctx.Value(localKey) == localValue {
-			t.Errorf("local value should not be copied")
-		}
+	localCtx = context.WithLocalValue(localCtx, localKey, localValue)
+	localCtx = context.WithLocalValue(localCtx, duplicateKey, duplicateValue)
 
-		ctx.Localize(localKey, "goroutineValue")
-
-	}(localCtx, &wg)
-
-	wg.Wait()
-
-	if paniced {
-		t.Errorf("unexpected panic")
-	}
-
-	if localCtx.Value(localKey) != localValue {
-		t.Errorf("expected localKey == localValue")
-	}
+	checkContext(t, ctx)
+	checkLocal(t, localCtx)
 }
+
+// func Test_FromContext(t *testing.T) {
+// 	t.Parallel()
+
+// 	ctx := context.WithValue(context.Background(), immutableKey, immutableValue)
+// 	ctx = context.WithValue(ctx, duplicateKey, immutableValue)
+
+// 	localCtx := context.FromContext(ctx)
+// 	localCtx.Localize(localKey, localValue)
+// 	localCtx.Localize(duplicateKey, duplicateValue)
+
+// 	checkContext(t, localCtx.GetContext())
+// 	checkLocal(t, localCtx)
+// }
+
+// func Test_Context_ThreadSafety_Correct_Usage(t *testing.T) {
+// 	t.Parallel()
+
+// 	localCtx := context.NewLocalized()
+// 	localCtx.Localize(localKey, localValue)
+
+// 	var paniced bool
+
+// 	var wg sync.WaitGroup
+// 	wg.Add(1)
+// 	go func(boundaryCtx context.Context, wg *sync.WaitGroup) {
+// 		defer func() {
+// 			if err := recover(); err != nil {
+// 				paniced = true
+// 			}
+// 		}()
+// 		defer wg.Done()
+
+// 		ctx := context.FromContext(boundaryCtx)
+// 		if ctx.Value(localKey) == localValue {
+// 			t.Errorf("local value should not be copied")
+// 		}
+
+// 		ctx.Localize(localKey, "goroutineValue")
+
+// 	}(localCtx, &wg)
+
+// 	wg.Wait()
+
+// 	if paniced {
+// 		t.Errorf("unexpected panic")
+// 	}
+
+// 	if localCtx.Value(localKey) != localValue {
+// 		t.Errorf("expected localKey == localValue")
+// 	}
+// }

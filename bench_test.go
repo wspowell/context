@@ -1,10 +1,9 @@
-package local_test
+package context_test
 
 import (
-	"context"
 	"testing"
 
-	"github.com/wspowell/local"
+	"github.com/wspowell/context"
 )
 
 type contextKey struct{}
@@ -21,10 +20,11 @@ func Benchmark_Context_New(b *testing.B) {
 }
 
 func Benchmark_Localized_New(b *testing.B) {
+	ctx := context.Background()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			local.NewLocalized()
+			context.Localize(ctx)
 		}
 	})
 }
@@ -39,12 +39,12 @@ func Benchmark_Context_WithValue(b *testing.B) {
 	})
 }
 
-func Benchmark_Localized_Localize(b *testing.B) {
+func Benchmark_WithLocalValue(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			localCtx := local.NewLocalized()
-			localCtx.Localize(key, "value")
+			ctx := context.Background()
+			context.WithLocalValue(ctx, key, "value")
 		}
 	})
 }
@@ -62,13 +62,13 @@ func Benchmark_Context_Value(b *testing.B) {
 }
 
 func Benchmark_Localized_Value(b *testing.B) {
-	localCtx := local.NewLocalized()
-	localCtx.Localize(key, "value")
+	ctx := context.Background()
+	context.WithLocalValue(ctx, key, "value")
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			localCtx.Value(key)
+			ctx.Value(key)
 		}
 	})
 }

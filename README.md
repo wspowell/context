@@ -6,7 +6,7 @@ Localized Golang Context
 
 Golang `context.Context` is a feature that is easily abused. A `context.Context` should only be used for immutable data and are meant to be passed between API boundaries (and therefore must be thread safe). However, it is extremely tempting (and easy) to violate this contract and use it as a generic variable store for values used throughout an goroutines lifetime. 
 
-`local.Context` attempts to address these issues. A `local.Context` is both a `context.Context` and a variable store for goroutine local data. The difference is that `local.Context` provides behavior to localize data to the goroutine. Localized data is not immutable and must never be sent across API boundaries (and therefore not thread safe). Passing a local context to a goroutine will automatically cut out the local data and only pass the immutable context data.
+`context.Context` attempts to address these issues. A `context.Context` is both a `context.Context` and a variable store for goroutine local data. The difference is that `context.Context` provides behavior to localize data to the goroutine. Localized data is not immutable and must never be sent across API boundaries (and therefore not thread safe). Passing a local context to a goroutine will automatically cut out the local data and only pass the immutable context data.
 
 ## Building
 
@@ -17,10 +17,10 @@ The package utilizes goroutine identification (that Golang authors created) to c
 
 ```
 // Create a new localized context.
-ctx := local.NewLocalized()
+ctx := context.NewLocalized()
 
 // Add immutable data.
-local.WithValue(ctx, "log_level", "info")
+context.WithValue(ctx, "log_level", "info")
 
 // Add local data.
 // Stored map may be accessed and altered at any time during the goroutine.
@@ -34,7 +34,7 @@ go processData(ctx)
 func processData(boundaryCtx context.Context) {
     // Create a new context local to this goroutine.
     // Context no longer has access to the "local" key.
-    ctx := local.FromContext(boundaryCtx)
+    ctx := context.FromContext(boundaryCtx)
 
     // Get the log level to create a new logger.
     logLevel := ctx.Value("log_level")

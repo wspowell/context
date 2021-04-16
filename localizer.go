@@ -1,4 +1,4 @@
-package local
+package context
 
 // Localizer stores data local to a goroutine. A localized context.
 // This works differently than context.Context in that it is not meant to
@@ -16,5 +16,5 @@ type Localizer interface {
 	Localize(key interface{}, value interface{})
 }
 
-var _ Context = (*Localized)(nil)
-var _ contextualizer = (*Localized)(nil)
+// var _ Context = (*Localized)(nil)
+// var _ contextualizer = (*Localized)(nil)
