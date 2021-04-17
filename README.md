@@ -11,6 +11,7 @@ Golang `context.Context` is a feature that is easily abused. A `context.Context`
 ## Building
 
 The package utilizes goroutine identification (that Golang authors created) to catch threading issues during development. The downside is that tracking goroutine IDs adds significant overhead. In order to solve this, the default build will use goroutine tracking. To build a "release" build, use -tags option with "release".
+
 `go build -tags release ./...`
 
 ## Example
