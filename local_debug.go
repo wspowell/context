@@ -2,6 +2,8 @@
 
 package context
 
+import "reflect"
+
 type locals map[interface{}]interface{}
 type localsKey struct{}
 
@@ -24,8 +26,14 @@ func Localize(ctx Context) Context {
 			if cloner, ok := value.(interface{ Clone() interface{} }); ok {
 				localValues[key] = cloner.Clone()
 			} else {
-				// All shadowed local values reset to nil.
-				localValues[key] = nil
+				switch reflect.TypeOf(value).Kind() {
+				case reflect.Array, reflect.Chan, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice, reflect.Struct, reflect.UnsafePointer:
+					// All shadowed local values reset to nil.
+					localValues[key] = nil
+				default:
+					// Value should be copyable.
+					localValues[key] = value
+				}
 			}
 		}
 	} else {

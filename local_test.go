@@ -10,6 +10,7 @@ import (
 
 type immutableContextKey struct{}
 type localContextKey struct{}
+type localValueContextKey struct{}
 type duplicateContextKey struct{}
 
 var (
@@ -83,14 +84,19 @@ func Test_Context_ThreadSafety_Correct_Usage(t *testing.T) {
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, immutableContextKey{}, immutableValue)
-	ctx = context.WithLocalValue(ctx, localContextKey{}, localValue)
+	ctx = context.WithLocalValue(ctx, localContextKey{}, &localValue)
+	ctx = context.WithLocalValue(ctx, localValueContextKey{}, 15)
 
 	if ctx.Value(immutableContextKey{}) != immutableValue {
 		t.Errorf("expected immutableContextKey{} == immutableValue")
 	}
 
-	if ctx.Value(localContextKey{}) != localValue {
+	if ctx.Value(localContextKey{}) != &localValue {
 		t.Errorf("expected localContextKey{} == localValue")
+	}
+
+	if ctx.Value(localValueContextKey{}) != 15 {
+		t.Errorf("expected localValueContextKey{} == 15")
 	}
 
 	var paniced bool
@@ -107,8 +113,11 @@ func Test_Context_ThreadSafety_Correct_Usage(t *testing.T) {
 			defer wg.Done()
 
 			localCtx := context.Localize(boundaryCtx)
-			if localCtx.Value(localContextKey{}) == localValue {
+			if localCtx.Value(localContextKey{}) == &localValue {
 				t.Errorf("local value should not be copied")
+			}
+			if localCtx.Value(localValueContextKey{}) != 15 {
+				t.Errorf("local value should be copied")
 			}
 
 			if localCtx.Value(localContextKey{}) == "goroutineValue" {
@@ -133,7 +142,11 @@ func Test_Context_ThreadSafety_Correct_Usage(t *testing.T) {
 		t.Errorf("expected immutableContextKey{} == immutableValue")
 	}
 
-	if ctx.Value(localContextKey{}) != localValue {
+	if ctx.Value(localContextKey{}) != &localValue {
 		t.Errorf("expected localContextKey{} == localValue")
+	}
+
+	if ctx.Value(localValueContextKey{}) != 15 {
+		t.Errorf("expected localValueContextKey{} == 15")
 	}
 }
