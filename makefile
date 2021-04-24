@@ -9,4 +9,5 @@ test: build
 	$(CURRENT_DIR)/bin/gotestsum --format dots -- -count=1 -parallel 8 -race -v -tags release ./...
 
 bench: build
-	go test -tags release -bench=. -benchmem -count=1 -parallel 8 -race
+	go test -bench=. -benchmem -count=1 -cpu 8 -parallel 8
+	go test -bench=. -benchmem -count=1 -cpu 8 -parallel 8 -tags release
