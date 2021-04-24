@@ -32,6 +32,19 @@ go processData(ctx)
 
 ...
 
+type Log struct {
+    ...
+}
+
+func NewLogger() Log {
+    ...
+}
+
+// Localize Log to the new local Context.
+func (self Log) Localize() interface{} {
+    ...
+}
+
 func processData(ctx context.Context) {
     // Create a new context local to this goroutine.
     // Context no longer has access to the localized keys.
