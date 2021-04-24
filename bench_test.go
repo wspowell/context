@@ -10,7 +10,7 @@ type contextKey struct{}
 
 var key = contextKey{}
 
-func Benchmark_Context_New(b *testing.B) {
+func Benchmark_Background_New(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -19,7 +19,15 @@ func Benchmark_Context_New(b *testing.B) {
 	})
 }
 
-func Benchmark_Localized_New(b *testing.B) {
+func Benchmark_Local(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			context.Local()
+		}
+	})
+}
+
+func Benchmark_Localize_New(b *testing.B) {
 	ctx := context.Background()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -29,7 +37,7 @@ func Benchmark_Localized_New(b *testing.B) {
 	})
 }
 
-func Benchmark_Context_WithValue(b *testing.B) {
+func Benchmark_Background_WithValue(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -39,17 +47,17 @@ func Benchmark_Context_WithValue(b *testing.B) {
 	})
 }
 
-func Benchmark_WithLocalValue(b *testing.B) {
+func Benchmark_Local_WithLocalValue(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			ctx := context.Background()
+			ctx := context.Local()
 			context.WithLocalValue(ctx, key, "value")
 		}
 	})
 }
 
-func Benchmark_Context_Value(b *testing.B) {
+func Benchmark_Background_Value(b *testing.B) {
 	ctx := context.Background()
 	context.WithValue(ctx, key, "value")
 
@@ -62,13 +70,14 @@ func Benchmark_Context_Value(b *testing.B) {
 }
 
 func Benchmark_Localized_Value(b *testing.B) {
-	ctx := context.Background()
+	ctx := context.Local()
 	context.WithLocalValue(ctx, key, "value")
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			ctx.Value(key)
+			localCtx := context.Localize(ctx)
+			localCtx.Value(key)
 		}
 	})
 }

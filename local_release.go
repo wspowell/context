@@ -2,8 +2,6 @@
 
 package context
 
-import "reflect"
-
 type locals map[interface{}]interface{}
 type localsKey struct{}
 
@@ -13,23 +11,15 @@ func Localize(ctx Context) Context {
 	var localValues locals
 
 	if local, ok := ctx.Value(localsKey{}).(*localized); ok {
-		// Values are shadowed by the local context to prevent access to any locals
-		// in a parent context.
+		// Values are shadowed by the local context to prevent access to any locals in a parent context.
 		localValues = make(locals, len(local.localValues))
 		for key, value := range local.localValues {
-			// Anything that can Clone() should be cloned.
-			// Cloned values must be thread safe.
-			if cloner, ok := value.(interface{ Clone() interface{} }); ok {
-				localValues[key] = cloner.Clone()
+			if localizer, ok := value.(interface{ Localize() interface{} }); ok {
+				// Use localized value.
+				localValues[key] = localizer.Localize()
 			} else {
-				switch reflect.TypeOf(value).Kind() {
-				case reflect.Array, reflect.Chan, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice, reflect.Struct, reflect.UnsafePointer:
-					// All shadowed local values reset to nil.
-					localValues[key] = nil
-				default:
-					// Value should be copyable.
-					localValues[key] = value
-				}
+				// Shadowed local value reset to nil.
+				localValues[key] = nil
 			}
 		}
 	} else {
@@ -44,11 +34,11 @@ func Localize(ctx Context) Context {
 
 // WithLocalValue wraps the parent Context and adds the key-value pair
 // as a value local to the current goroutine.
-func WithLocalValue(parent Context, key interface{}, value interface{}) Context {
+func WithLocalValue(parent Context, key interface{}, value interface{}) {
 	if local, ok := parent.Value(localsKey{}).(*localized); ok {
 		local.localValues[key] = value
-		return parent
+		return
 	}
 
-	return WithLocalValue(Localize(parent), key, value)
+	panic("context not localized to the current goroutine")
 }

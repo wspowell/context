@@ -15,9 +15,10 @@ import (
 func Test_Context_ThreadSafety_Incorrect_Usage(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := context.Local()
 	ctx = context.WithValue(ctx, immutableContextKey{}, immutableValue)
-	ctx = context.WithLocalValue(ctx, localContextKey{}, localValue)
+
+	context.WithLocalValue(ctx, localContextKey{}, localValue)
 
 	if ctx.Value(immutableContextKey{}) != immutableValue {
 		t.Errorf("expected immutableContextKey{} == immutableValue")
@@ -53,9 +54,10 @@ func Test_Context_ThreadSafety_Incorrect_Usage(t *testing.T) {
 func Test_Context_ThreadSafety_double_Localized(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := context.Local()
 	ctx = context.WithValue(ctx, immutableContextKey{}, immutableValue)
-	ctx = context.WithLocalValue(ctx, localContextKey{}, localValue)
+
+	context.WithLocalValue(ctx, localContextKey{}, localValue)
 
 	if ctx.Value(immutableContextKey{}) != immutableValue {
 		t.Errorf("expected immutableContextKey{} == immutableValue")
