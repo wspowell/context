@@ -1,5 +1,5 @@
-// +build !release
-// +build !race
+//go:build !release && !race
+// +build !release,!race
 
 // Do not use the race detector on this file. These tests are expected to have data races.
 // The whole purpose of these test are cause a data race and test that they panic.
