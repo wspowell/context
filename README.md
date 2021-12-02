@@ -54,3 +54,45 @@ func processData(ctx context.Context) {
     ...
 }
 ```
+
+# Benchmarks
+
+Take benchmarks with a bucket of salt.
+
+Debug
+```
+go test -bench=. -benchmem -count=1 -cpu 8 -parallel 8
+
+goos: linux
+goarch: amd64
+pkg: github.com/wspowell/context
+cpu: AMD Ryzen 9 4900HS with Radeon Graphics         
+Benchmark_Background-8                            226327              5475 ns/op              80 B/op          2 allocs/op
+Benchmark_golang_Background-8                   1000000000               0.07874 ns/op         0 B/op          0 allocs/op
+Benchmark_Localize_New-8                          116875             10417 ns/op              80 B/op          2 allocs/op
+Benchmark_Background_WithValue-8                  201621              5423 ns/op             128 B/op          3 allocs/op
+Benchmark_golang_Background_WithValue-8         65251435                18.59 ns/op           48 B/op          1 allocs/op
+Benchmark_Background_WithLocalValue-8             100945             11884 ns/op             368 B/op          3 allocs/op
+Benchmark_Background_Value-8                    571482546                1.900 ns/op           0 B/op          0 allocs/op
+Benchmark_golang_Background_Value-8             1000000000               0.7703 ns/op          0 B/op          0 allocs/op
+Benchmark_Localized_Value-8                        75704             15893 ns/op             368 B/op          3 allocs/op
+```
+
+Release
+```
+go test -bench=. -benchmem -count=1 -cpu 8 -parallel 8 -tags release
+
+goos: linux
+goarch: amd64
+pkg: github.com/wspowell/context
+cpu: AMD Ryzen 9 4900HS with Radeon Graphics         
+Benchmark_Background-8                          41165250                26.41 ns/op           72 B/op          2 allocs/op
+Benchmark_golang_Background-8                   1000000000               0.07632 ns/op         0 B/op          0 allocs/op
+Benchmark_Localize_New-8                        43370932                27.48 ns/op           72 B/op          2 allocs/op
+Benchmark_Background_WithValue-8                27121095                44.39 ns/op          120 B/op          3 allocs/op
+Benchmark_golang_Background_WithValue-8         70512330                16.83 ns/op           48 B/op          1 allocs/op
+Benchmark_Background_WithLocalValue-8           11035557               106.8 ns/op           360 B/op          3 allocs/op
+Benchmark_Background_Value-8                    613432014                1.864 ns/op           0 B/op          0 allocs/op
+Benchmark_golang_Background_Value-8             1000000000               0.7949 ns/op          0 B/op          0 allocs/op
+Benchmark_Localized_Value-8                      9912792               123.1 ns/op           360 B/op          3 allocs/op
+```

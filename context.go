@@ -154,10 +154,12 @@ type Context interface {
 }
 
 // Canceled is the error returned by Context.Err when the context is canceled.
+// nolint:errname,gochecknoglobals // reason: golang source
 var Canceled = errors.New(icContextCanceled, "context canceled")
 
 // DeadlineExceeded is the error returned by Context.Err when the context's
 // deadline passes.
+// nolint:errname,gochecknoglobals // reason: golang source
 var DeadlineExceeded error = deadlineExceededError{}
 
 type deadlineExceededError struct{}
@@ -193,12 +195,15 @@ func (e *emptyCtx) String() string {
 	case todo:
 		return "context.TODO"
 	}
+
 	return "unknown empty Context"
 }
 
 var (
+	// nolint:gochecknoglobals // reason: golang source
 	background = new(emptyCtx)
-	todo       = new(emptyCtx)
+	// nolint:gochecknoglobals // reason: golang source
+	todo = new(emptyCtx)
 )
 
 // Background returns a non-nil, empty Context. It is never canceled, has no
@@ -206,16 +211,6 @@ var (
 // initialization, and tests, and as the top-level Context for incoming
 // requests.
 func Background() Context {
-	return background
-}
-
-// Local returns a non-nil, empty Context localized to the current goroutine.
-// It is never canceled, has no values, and has no deadline. It is typically
-// used by the main function, initialization, and tests, and as the top-level
-// Context for incoming requests.
-//
-// This should typically be used instead of Background().
-func Local() Context {
 	return Localize(background)
 }
 
@@ -245,6 +240,7 @@ func WithCancel(parent Context) (ctx Context, cancel CancelFunc) {
 	}
 	c := newCancelCtx(parent)
 	propagateCancel(parent, &c)
+
 	return &c, func() { c.cancel(true, Canceled) }
 }
 
@@ -255,6 +251,7 @@ func newCancelCtx(parent Context) cancelCtx {
 
 // propagateCancel arranges for child to be canceled when parent is.
 func propagateCancel(parent Context, child canceler) {
+	// nolint:ifshort // reason: golang source
 	done := parent.Done()
 	if done == nil {
 		return // parent is never canceled
@@ -264,6 +261,7 @@ func propagateCancel(parent Context, child canceler) {
 	case <-done:
 		// parent is already canceled
 		child.cancel(false, parent.Err())
+
 		return
 	default:
 	}
@@ -292,6 +290,7 @@ func propagateCancel(parent Context, child canceler) {
 }
 
 // &cancelCtxKey is the key that a cancelCtx returns itself for.
+// nolint:gochecknoglobals // reason: golang source
 var cancelCtxKey int
 
 // parentCancelCtx returns the underlying *cancelCtx for parent.
@@ -315,6 +314,7 @@ func parentCancelCtx(parent Context) (*cancelCtx, bool) {
 	if !ok {
 		return nil, false
 	}
+
 	return p, true
 }
 
@@ -339,8 +339,10 @@ type canceler interface {
 }
 
 // closedchan is a reusable closed channel.
+// nolint:gochecknoglobals // reason: golang source
 var closedchan = make(chan struct{})
 
+// nolint:gochecknoinits // reason: golang source
 func init() {
 	close(closedchan)
 }
@@ -360,6 +362,7 @@ func (c *cancelCtx) Value(key interface{}) interface{} {
 	if key == &cancelCtxKey {
 		return c
 	}
+
 	return c.Context.Value(key)
 }
 
@@ -370,6 +373,7 @@ func (c *cancelCtx) Done() <-chan struct{} {
 	}
 	d := c.done
 	c.mu.Unlock()
+
 	return d
 }
 
@@ -377,6 +381,7 @@ func (c *cancelCtx) Err() error {
 	c.mu.Lock()
 	err := c.err
 	c.mu.Unlock()
+
 	return err
 }
 
@@ -388,6 +393,7 @@ func contextName(c Context) string {
 	if s, ok := c.(stringer); ok {
 		return s.String()
 	}
+
 	return reflect.TypeOf(c).String()
 }
 
@@ -404,6 +410,7 @@ func (c *cancelCtx) cancel(removeFromParent bool, err error) {
 	c.mu.Lock()
 	if c.err != nil {
 		c.mu.Unlock()
+
 		return // already canceled
 	}
 	c.err = err
@@ -449,6 +456,7 @@ func WithDeadline(parent Context, d time.Time) (Context, CancelFunc) {
 	dur := time.Until(d)
 	if dur <= 0 {
 		c.cancel(true, DeadlineExceeded) // deadline has already passed
+
 		return c, func() { c.cancel(false, Canceled) }
 	}
 	c.mu.Lock()
@@ -458,6 +466,7 @@ func WithDeadline(parent Context, d time.Time) (Context, CancelFunc) {
 			c.cancel(true, DeadlineExceeded)
 		})
 	}
+
 	return c, func() { c.cancel(true, Canceled) }
 }
 
@@ -532,6 +541,7 @@ func WithValue(parent Context, key, val interface{}) Context {
 	if !reflect.TypeOf(key).Comparable() {
 		panic("key is not comparable")
 	}
+
 	return &valueCtx{parent, key, val}
 }
 
@@ -552,6 +562,7 @@ func stringify(v interface{}) string {
 	case string:
 		return s
 	}
+
 	return "<not Stringer>"
 }
 
@@ -565,5 +576,6 @@ func (c *valueCtx) Value(key interface{}) interface{} {
 	if c.key == key {
 		return c.val
 	}
+
 	return c.Context.Value(key)
 }

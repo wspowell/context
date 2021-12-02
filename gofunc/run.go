@@ -1,8 +1,9 @@
 package gofunc
 
 import (
-	"github.com/wspowell/context"
 	"github.com/wspowell/errors"
+
+	"github.com/wspowell/context"
 )
 
 type RunFn func(ctx context.Context) error

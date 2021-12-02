@@ -23,6 +23,7 @@ func (self *localized) Value(key interface{}) interface{} {
 		if !self.goroutineOrigin.isSameGoroutine() {
 			panic("localized value accessed outside original goroutine")
 		}
+
 		return localValue
 	}
 

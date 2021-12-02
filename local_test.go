@@ -5,6 +5,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/wspowell/context"
 )
 
@@ -13,37 +15,41 @@ type localContextKey struct{}
 type localValueContextKey struct{}
 type duplicateContextKey struct{}
 
-var (
+const (
 	immutableValue = "immutableValue"
 	localValue     = "localValue"
 	duplicateValue = "myValue"
 )
 
 func checkContext(t *testing.T, ctx context.Context) {
+	t.Helper()
+
 	if ctx.Value(localContextKey{}) != nil {
-		panic("expected 'localContextKey{}' to be nil")
+		assert.Fail(t, "expected 'localContextKey{}' to be nil")
 	}
 
 	if ctx.Value(duplicateContextKey{}).(string) != immutableValue {
-		panic(fmt.Sprintf("expected 'duplicatedKey' to be %v but was %v", immutableValue, ctx.Value(duplicateContextKey{})))
+		assert.Fail(t, fmt.Sprintf("expected 'duplicatedKey' to be %v but was %v", immutableValue, ctx.Value(duplicateContextKey{})))
 	}
 
 	if ctx.Value(immutableContextKey{}).(string) != immutableValue {
-		panic(fmt.Sprintf("expected 'immutable' to be %v but was %v", immutableContextKey{}, ctx.Value(immutableContextKey{})))
+		assert.Fail(t, fmt.Sprintf("expected 'immutable' to be %v but was %v", immutableContextKey{}, ctx.Value(immutableContextKey{})))
 	}
 }
 
 func checkLocal(t *testing.T, ctx context.Context) {
+	t.Helper()
+
 	if ctx.Value(localContextKey{}).(string) != localValue {
-		panic(fmt.Sprintf("expected 'localContextKey{}' to be %v but was %v", localValue, ctx.Value(localContextKey{})))
+		assert.Fail(t, fmt.Sprintf("expected 'localContextKey{}' to be %v but was %v", localValue, ctx.Value(localContextKey{})))
 	}
 
 	if ctx.Value(duplicateContextKey{}).(string) != duplicateValue {
-		panic(fmt.Sprintf("expected 'duplicatedKey' to be %v but was %v", duplicateValue, ctx.Value(duplicateContextKey{})))
+		assert.Fail(t, fmt.Sprintf("expected 'duplicatedKey' to be %v but was %v", duplicateValue, ctx.Value(duplicateContextKey{})))
 	}
 
 	if ctx.Value(immutableContextKey{}).(string) != immutableValue {
-		panic(fmt.Sprintf("expected 'immutable' to be %v but was %v", immutableContextKey{}, ctx.Value(immutableContextKey{})))
+		assert.Fail(t, fmt.Sprintf("expected 'immutable' to be %v but was %v", immutableContextKey{}, ctx.Value(immutableContextKey{})))
 	}
 }
 
@@ -55,39 +61,60 @@ func Test_Localize(t *testing.T) {
 	ctx = context.WithValue(ctx, immutableContextKey{}, immutableValue)
 	ctx = context.WithValue(ctx, duplicateContextKey{}, immutableValue)
 
-	localCtx := context.Localize(ctx)
+	var localCtx context.Context
 
-	context.WithLocalValue(localCtx, localContextKey{}, localValue)
-	context.WithLocalValue(localCtx, duplicateContextKey{}, duplicateValue)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		localCtx = context.Localize(ctx)
+
+		context.WithLocalValue(localCtx, localContextKey{}, localValue)
+		context.WithLocalValue(localCtx, duplicateContextKey{}, duplicateValue)
+
+		checkLocal(t, localCtx)
+	}()
+	wg.Wait()
 
 	checkContext(t, ctx)
-	checkLocal(t, localCtx)
 }
 
-func Test_WithLocalValue_missing_Localize(t *testing.T) {
+func Test_WithLocalValue_Localize(t *testing.T) {
 	t.Parallel()
-
-	defer func() {
-		if err := recover(); err != nil {
-			// Tests passed.
-			return
-		}
-		t.Errorf("expected panic, but found none")
-	}()
 
 	ctx := context.Background()
 
-	ctx = context.WithValue(ctx, immutableContextKey{}, immutableValue)
-	ctx = context.WithValue(ctx, duplicateContextKey{}, immutableValue)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer func() {
+			if err := recover(); err != nil {
+				t.Errorf("expected no panic, but did")
 
-	context.WithLocalValue(ctx, localContextKey{}, localValue)
-	context.WithLocalValue(ctx, duplicateContextKey{}, duplicateValue)
+				return
+			}
+		}()
+
+		ctx = context.Localize(ctx)
+
+		ctx = context.WithValue(ctx, immutableContextKey{}, immutableValue)
+		ctx = context.WithValue(ctx, duplicateContextKey{}, immutableValue)
+
+		context.WithLocalValue(ctx, localContextKey{}, localValue)
+		context.WithLocalValue(ctx, duplicateContextKey{}, duplicateValue)
+	}()
+	wg.Wait()
 }
 
 func Test_Context_ThreadSafety_Correct_Usage(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Local()
+	immutableValue := "immutableValue"
+	localValue := "localValue"
+
+	ctx := context.Background()
 	ctx = context.WithValue(ctx, immutableContextKey{}, immutableValue)
 
 	context.WithLocalValue(ctx, localContextKey{}, &localValue)

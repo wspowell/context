@@ -14,11 +14,12 @@ package context
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"runtime"
 	"strconv"
 	"sync"
+
+	"github.com/wspowell/errors"
 )
 
 // ID is the ID number of a goroutine.
@@ -28,7 +29,7 @@ func (self goroutineId) isSameGoroutine() bool {
 	return self == curID()
 }
 
-var goroutineSpace = []byte("goroutine ")
+const goroutineSpace = "goroutine "
 
 // CurID gets the ID number of the current goroutine.
 //
@@ -46,12 +47,15 @@ var goroutineSpace = []byte("goroutine ")
 // (if you are a Go Author, please, please, PLEASE provide this as part of the
 // stdlib...).
 func curID() goroutineId {
-	bp := littleBuf.Get().(*[]byte)
+	bp, ok := littleBuf.Get().(*[]byte)
+	if !ok {
+		return goroutineId(0)
+	}
 	defer littleBuf.Put(bp)
 	b := *bp
 	b = b[:runtime.Stack(b, false)]
 	// Parse the 4707 out of "goroutine 4707 ["
-	b = bytes.TrimPrefix(b, goroutineSpace)
+	b = bytes.TrimPrefix(b, []byte(goroutineSpace))
 	i := bytes.IndexByte(b, ' ')
 	if i < 0 {
 		panic(fmt.Sprintf("No space found in %q", b))
@@ -61,12 +65,15 @@ func curID() goroutineId {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to parse goroutine ID out of %q: %v", b, err))
 	}
+
 	return goroutineId(n)
 }
 
+// nolint:gochecknoglobals // reason: sync pool
 var littleBuf = sync.Pool{
 	New: func() interface{} {
 		buf := make([]byte, 64)
+
 		return &buf
 	},
 }
@@ -83,9 +90,10 @@ func parseUintBytes(s []byte, base int, bitSize int) (n uint64, err error) {
 	switch {
 	case len(s) < 1:
 		err = strconv.ErrSyntax
+
 		goto Error
 
-	case 2 <= base && base <= 36:
+	case base >= 2 && base <= 36:
 		// valid base; nothing to do
 
 	case base == 0:
@@ -96,6 +104,7 @@ func parseUintBytes(s []byte, base int, bitSize int) (n uint64, err error) {
 			s = s[2:]
 			if len(s) < 1 {
 				err = strconv.ErrSyntax
+
 				goto Error
 			}
 		case s[0] == '0':
@@ -105,7 +114,8 @@ func parseUintBytes(s []byte, base int, bitSize int) (n uint64, err error) {
 		}
 
 	default:
-		err = errors.New("invalid base " + strconv.Itoa(base))
+		err = errors.New("allyourbase", "invalid base "+strconv.Itoa(base))
+
 		goto Error
 	}
 
@@ -117,20 +127,25 @@ func parseUintBytes(s []byte, base int, bitSize int) (n uint64, err error) {
 		var v byte
 		d := s[i]
 		switch {
+		// nolint:gocritic // reason: easier to read
 		case '0' <= d && d <= '9':
 			v = d - '0'
+		// nolint:gocritic // reason: easier to read
 		case 'a' <= d && d <= 'z':
 			v = d - 'a' + 10
+		// nolint:gocritic // reason: easier to read
 		case 'A' <= d && d <= 'Z':
 			v = d - 'A' + 10
 		default:
 			n = 0
 			err = strconv.ErrSyntax
+
 			goto Error
 		}
 		if int(v) >= base {
 			n = 0
 			err = strconv.ErrSyntax
+
 			goto Error
 		}
 
@@ -138,6 +153,7 @@ func parseUintBytes(s []byte, base int, bitSize int) (n uint64, err error) {
 			// n*base overflows
 			n = 1<<64 - 1
 			err = strconv.ErrRange
+
 			goto Error
 		}
 		n *= uint64(base)
@@ -147,6 +163,7 @@ func parseUintBytes(s []byte, base int, bitSize int) (n uint64, err error) {
 			// n+v overflows
 			n = 1<<64 - 1
 			err = strconv.ErrRange
+
 			goto Error
 		}
 		n = n1
@@ -163,5 +180,6 @@ func cutoff64(base int) uint64 {
 	if base < 2 {
 		return 0
 	}
+
 	return (1<<64-1)/uint64(base) + 1
 }

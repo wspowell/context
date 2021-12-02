@@ -13,17 +13,22 @@ import (
 )
 
 func Test_Run_local_check(t *testing.T) {
-	ctx := context.Local()
+	t.Parallel()
+
+	ctx := context.Background()
 	err := gofunc.Run(ctx, func(ctx context.Context) error {
 		// Should panic since Run() already localized the context.
 		context.Localize(ctx)
+
 		return nil
 	})
 	assert.NotNil(t, <-err)
 }
 
 func Test_Exec_local_check(t *testing.T) {
-	ctx := context.Local()
+	t.Parallel()
+
+	ctx := context.Background()
 	job := newTask(true)
 	err := gofunc.Exec(ctx, job)
 	assert.NotNil(t, <-err)

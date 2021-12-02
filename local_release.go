@@ -7,7 +7,7 @@ type locals map[interface{}]interface{}
 type localsKey struct{}
 
 // Localize a Context to the current goroutine.
-// Any local values set on the Context via WithLocalValue become inaccessable to the returned Context.
+// Any local values set on the Context via WithLocalValue become inaccessible to the returned Context.
 func Localize(ctx Context) Context {
 	var localValues locals
 
@@ -38,6 +38,7 @@ func Localize(ctx Context) Context {
 func WithLocalValue(parent Context, key interface{}, value interface{}) {
 	if local, ok := parent.Value(localsKey{}).(*localized); ok {
 		local.localValues[key] = value
+
 		return
 	}
 

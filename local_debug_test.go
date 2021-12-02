@@ -15,7 +15,7 @@ import (
 func Test_Context_ThreadSafety_Incorrect_Usage(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Local()
+	ctx := context.Background()
 	ctx = context.WithValue(ctx, immutableContextKey{}, immutableValue)
 
 	context.WithLocalValue(ctx, localContextKey{}, localValue)
@@ -54,7 +54,7 @@ func Test_Context_ThreadSafety_Incorrect_Usage(t *testing.T) {
 func Test_Context_ThreadSafety_double_Localized(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Local()
+	ctx := context.Background()
 	ctx = context.WithValue(ctx, immutableContextKey{}, immutableValue)
 
 	context.WithLocalValue(ctx, localContextKey{}, localValue)
@@ -90,4 +90,31 @@ func Test_Context_ThreadSafety_double_Localized(t *testing.T) {
 	if !paniced {
 		t.Errorf("expected panic")
 	}
+}
+
+func Test_WithLocalValue_missing_Localize(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		defer func() {
+			if err := recover(); err != nil {
+				// Tests passed.
+				return
+			}
+			t.Errorf("expected panic, but found none")
+		}()
+
+		ctx = context.WithValue(ctx, immutableContextKey{}, immutableValue)
+		ctx = context.WithValue(ctx, duplicateContextKey{}, immutableValue)
+
+		context.WithLocalValue(ctx, localContextKey{}, localValue)
+		context.WithLocalValue(ctx, duplicateContextKey{}, duplicateValue)
+	}()
+	wg.Wait()
 }
