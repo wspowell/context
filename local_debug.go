@@ -3,7 +3,9 @@
 
 package context
 
-type locals map[interface{}]interface{}
+import "sync"
+
+type locals map[any]any
 type localsKey struct{}
 
 // Localize a Context to the current goroutine.
@@ -11,15 +13,16 @@ type localsKey struct{}
 func Localize(ctx Context) Context {
 	var localValues locals
 
-	if local, ok := ctx.Value(localsKey{}).(*localized); ok {
+	if local, ok := ctx.Value(localsKey{}).(*localCtx); ok {
 		if local.goroutineOrigin.isSameGoroutine() {
 			panic("context localized twice in the same goroutine")
 		}
 
 		// Values are shadowed by the local context to prevent access to any locals in a parent context.
+		local.localsMutex.Lock()
 		localValues = make(locals, len(local.localValues))
 		for key, value := range local.localValues {
-			if localizer, ok := value.(interface{ Localize() interface{} }); ok {
+			if localizer, ok := value.(interface{ Localize() any }); ok {
 				// Use localized value.
 				localValues[key] = localizer.Localize()
 			} else {
@@ -27,12 +30,14 @@ func Localize(ctx Context) Context {
 				localValues[key] = nil
 			}
 		}
+		local.localsMutex.Unlock()
 	} else {
-		localValues = locals{}
+		localValues = make(locals, 0)
 	}
 
-	return &localized{
+	return &localCtx{
 		Context:         ctx,
+		localsMutex:     &sync.RWMutex{},
 		localValues:     localValues,
 		goroutineOrigin: curID(),
 	}
@@ -40,8 +45,8 @@ func Localize(ctx Context) Context {
 
 // WithLocalValue wraps the parent Context and adds the key-value pair
 // as a value local to the current goroutine.
-func WithLocalValue(parent Context, key interface{}, value interface{}) {
-	if local, ok := parent.Value(localsKey{}).(*localized); ok {
+func WithLocalValue(parent Context, key any, value any) {
+	if local, ok := parent.Value(localsKey{}).(*localCtx); ok {
 		if !local.goroutineOrigin.isSameGoroutine() {
 			panic("context not localized to the current goroutine")
 		}

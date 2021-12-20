@@ -18,8 +18,6 @@ bench: build
 	#
 	# *** Run for real ***
 	#
-	go test -bench=. -benchmem -count=1 -parallel 8 
-	go test -bench=. -benchmem -count=1 -parallel 8 -tags release
 
 	go test -bench=. -benchmem -count=1 -cpu 8 -parallel 8
 	go test -bench=. -benchmem -count=1 -cpu 8 -parallel 8 -tags release

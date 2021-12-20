@@ -3,21 +3,29 @@
 
 package context
 
-type localized struct {
+import (
+	"sync"
+)
+
+type localCtx struct {
 	Context
 
+	localsMutex *sync.RWMutex
 	localValues locals
 }
 
 // Value returns the value stored at key in the context.
 // First check local values, then checks stored context.
 // Returns nil if key does not exist.
-func (self *localized) Value(key interface{}) interface{} {
+func (self *localCtx) Value(key any) any {
 	if key == (localsKey{}) {
 		return self
 	}
 
-	if localValue, exists := self.localValues[key]; exists {
+	self.localsMutex.RLock()
+	localValue, exists := self.localValues[key]
+	self.localsMutex.RUnlock()
+	if exists {
 		return localValue
 	}
 

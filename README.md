@@ -6,7 +6,7 @@ Replacement for Golang Context
 
 Golang `context.Context` is a feature that is easily abused. A `context.Context` should only be used for immutable data and are meant to be passed between API boundaries (and therefore must be thread safe). However, it is extremely tempting (and easy) to violate this contract and use it as a generic variable store for values used throughout an goroutines lifetime. 
 
-`context.Context` attempts to address these issues. A `context.Context` is both a `context.Context` and a variable store for goroutine local data. The difference is that `context.Context` provides behavior to localize data to the goroutine. Localized data is not thread safe and must never be sent across API boundaries. Localizing a context to a goroutine will cut out the local data and only allow access to the immutable context data. If localized data implements `Localize() interface{}`, then the value will be cloned in the localized context. `Localize() interface{}` must return a thread safe value.
+`context.Context` attempts to address these issues. A `context.Context` is both a `context.Context` and a variable store for goroutine local data. The difference is that `context.Context` provides behavior to localize data to the goroutine. Localized data is not thread safe and must never be sent across API boundaries. Localizing a context to a goroutine will cut out the local data and only allow access to the immutable context data. If localized data implements `Localize() any`, then the value will be cloned in the localized context. `Localize() any` must return a thread safe value.
 
 ## Building
 
@@ -41,14 +41,14 @@ func NewLogger() Log {
 }
 
 // Localize Log to the new local Context.
-func (self Log) Localize() interface{} {
+func (self Log) Localize() any {
     ...
 }
 
 func processData(ctx context.Context) {
     // Create a new context local to this goroutine.
     // Context no longer has access to the localized keys.
-    // Values are shadowed as nil, unless values implement Localize() interface{}.
+    // Values are shadowed as nil, unless values implement Localize() any.
     ctx := context.Localize(ctx)
     
     ...
@@ -67,15 +67,14 @@ goos: linux
 goarch: amd64
 pkg: github.com/wspowell/context
 cpu: AMD Ryzen 9 4900HS with Radeon Graphics         
-Benchmark_Background-8                            226327              5475 ns/op              80 B/op          2 allocs/op
-Benchmark_golang_Background-8                   1000000000               0.07874 ns/op         0 B/op          0 allocs/op
-Benchmark_Localize_New-8                          116875             10417 ns/op              80 B/op          2 allocs/op
-Benchmark_Background_WithValue-8                  201621              5423 ns/op             128 B/op          3 allocs/op
-Benchmark_golang_Background_WithValue-8         65251435                18.59 ns/op           48 B/op          1 allocs/op
-Benchmark_Background_WithLocalValue-8             100945             11884 ns/op             368 B/op          3 allocs/op
-Benchmark_Background_Value-8                    571482546                1.900 ns/op           0 B/op          0 allocs/op
-Benchmark_golang_Background_Value-8             1000000000               0.7703 ns/op          0 B/op          0 allocs/op
-Benchmark_Localized_Value-8                        75704             15893 ns/op             368 B/op          3 allocs/op
+Benchmark_Background-8                            288093              4170 ns/op             120 B/op          3 allocs/op
+Benchmark_golang_Background-8                   1000000000               0.4853 ns/op          0 B/op          0 allocs/op
+Benchmark_Background_WithValue-8                  277447              4288 ns/op             168 B/op          4 allocs/op
+Benchmark_golang_Background_WithValue-8         22266259                52.83 ns/op           48 B/op          1 allocs/op
+Benchmark_Background_Value-8                    295668966                4.046 ns/op           0 B/op          0 allocs/op
+Benchmark_golang_Background_Value-8             294940878                4.104 ns/op           0 B/op          0 allocs/op
+Benchmark_Localized_Value-8                        65911             17042 ns/op             408 B/op          4 allocs/op
+Benchmark_Background_WithLocalValue-8             131917              8846 ns/op             408 B/op          4 allocs/op
 ```
 
 Release
@@ -86,13 +85,12 @@ goos: linux
 goarch: amd64
 pkg: github.com/wspowell/context
 cpu: AMD Ryzen 9 4900HS with Radeon Graphics         
-Benchmark_Background-8                          41165250                26.41 ns/op           72 B/op          2 allocs/op
-Benchmark_golang_Background-8                   1000000000               0.07632 ns/op         0 B/op          0 allocs/op
-Benchmark_Localize_New-8                        43370932                27.48 ns/op           72 B/op          2 allocs/op
-Benchmark_Background_WithValue-8                27121095                44.39 ns/op          120 B/op          3 allocs/op
-Benchmark_golang_Background_WithValue-8         70512330                16.83 ns/op           48 B/op          1 allocs/op
-Benchmark_Background_WithLocalValue-8           11035557               106.8 ns/op           360 B/op          3 allocs/op
-Benchmark_Background_Value-8                    613432014                1.864 ns/op           0 B/op          0 allocs/op
-Benchmark_golang_Background_Value-8             1000000000               0.7949 ns/op          0 B/op          0 allocs/op
-Benchmark_Localized_Value-8                      9912792               123.1 ns/op           360 B/op          3 allocs/op
+Benchmark_Background-8                          10086432               117.0 ns/op           104 B/op          3 allocs/op
+Benchmark_golang_Background-8                   1000000000               0.3613 ns/op          0 B/op          0 allocs/op
+Benchmark_Background_WithValue-8                 7274389               161.5 ns/op           152 B/op          4 allocs/op
+Benchmark_golang_Background_WithValue-8         23939910                51.03 ns/op           48 B/op          1 allocs/op
+Benchmark_Background_Value-8                    295331836                4.093 ns/op           0 B/op          0 allocs/op
+Benchmark_golang_Background_Value-8             292899957                4.085 ns/op           0 B/op          0 allocs/op
+Benchmark_Localized_Value-8                      2853351               421.0 ns/op           392 B/op          4 allocs/op
+Benchmark_Background_WithLocalValue-8            3905462               294.0 ns/op           392 B/op          4 allocs/op
 ```
