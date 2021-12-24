@@ -67,14 +67,14 @@ goos: linux
 goarch: amd64
 pkg: github.com/wspowell/context
 cpu: AMD Ryzen 9 4900HS with Radeon Graphics         
-Benchmark_Background-8                            288093              4170 ns/op             120 B/op          3 allocs/op
-Benchmark_golang_Background-8                   1000000000               0.4853 ns/op          0 B/op          0 allocs/op
-Benchmark_Background_WithValue-8                  277447              4288 ns/op             168 B/op          4 allocs/op
-Benchmark_golang_Background_WithValue-8         22266259                52.83 ns/op           48 B/op          1 allocs/op
-Benchmark_Background_Value-8                    295668966                4.046 ns/op           0 B/op          0 allocs/op
-Benchmark_golang_Background_Value-8             294940878                4.104 ns/op           0 B/op          0 allocs/op
-Benchmark_Localized_Value-8                        65911             17042 ns/op             408 B/op          4 allocs/op
-Benchmark_Background_WithLocalValue-8             131917              8846 ns/op             408 B/op          4 allocs/op
+Benchmark_Background-8                            313935              3782 ns/op              64 B/op          1 allocs/op
+Benchmark_golang_Background-8                   1000000000               0.4807 ns/op          0 B/op          0 allocs/op
+Benchmark_Background_WithValue-8                  302839              3820 ns/op             112 B/op          2 allocs/op
+Benchmark_golang_Background_WithValue-8         24433995                47.67 ns/op           48 B/op          1 allocs/op
+Benchmark_Background_Value-8                    225462111                5.275 ns/op           0 B/op          0 allocs/op
+Benchmark_golang_Background_Value-8             277593678                4.358 ns/op           0 B/op          0 allocs/op
+Benchmark_Localized_Value-8                        72796             16625 ns/op             440 B/op          9 allocs/op
+Benchmark_Background_WithLocalValue-8             138301              8642 ns/op             376 B/op          7 allocs/op
 ```
 
 Release
@@ -85,12 +85,12 @@ goos: linux
 goarch: amd64
 pkg: github.com/wspowell/context
 cpu: AMD Ryzen 9 4900HS with Radeon Graphics         
-Benchmark_Background-8                          10086432               117.0 ns/op           104 B/op          3 allocs/op
-Benchmark_golang_Background-8                   1000000000               0.3613 ns/op          0 B/op          0 allocs/op
-Benchmark_Background_WithValue-8                 7274389               161.5 ns/op           152 B/op          4 allocs/op
-Benchmark_golang_Background_WithValue-8         23939910                51.03 ns/op           48 B/op          1 allocs/op
-Benchmark_Background_Value-8                    295331836                4.093 ns/op           0 B/op          0 allocs/op
-Benchmark_golang_Background_Value-8             292899957                4.085 ns/op           0 B/op          0 allocs/op
-Benchmark_Localized_Value-8                      2853351               421.0 ns/op           392 B/op          4 allocs/op
-Benchmark_Background_WithLocalValue-8            3905462               294.0 ns/op           392 B/op          4 allocs/op
+Benchmark_Background-8                          26362558                47.00 ns/op           64 B/op          1 allocs/op
+Benchmark_golang_Background-8                   1000000000               0.4766 ns/op          0 B/op          0 allocs/op
+Benchmark_Background_WithValue-8                13373020                94.64 ns/op          112 B/op          2 allocs/op
+Benchmark_golang_Background_WithValue-8         23825217                47.44 ns/op           48 B/op          1 allocs/op
+Benchmark_Background_Value-8                    278421498                4.357 ns/op           0 B/op          0 allocs/op
+Benchmark_golang_Background_Value-8             273102477                4.369 ns/op           0 B/op          0 allocs/op
+Benchmark_Localized_Value-8                      6209235               202.2 ns/op           440 B/op          9 allocs/op
+Benchmark_Background_WithLocalValue-8            2752718               480.5 ns/op           376 B/op          7 allocs/op
 ```
